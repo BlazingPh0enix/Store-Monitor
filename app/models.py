@@ -24,3 +24,11 @@ class TimeZones(Base):
 
     store_id = Column(String, primary_key=True)
     time_zone = Column(String, nullable=False)
+
+class StoreReport(Base):
+    __tablename__ = "store_report"
+
+    report_id = Column(String, primary_key=True)
+    store_id = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    created_at = Column(DateTime, nullable=False)
