@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store Monitoring Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            max-width: 700px;
+            width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .trigger-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #status {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 30px;
+            min-height: 120px;
+            transition: all 0.3s ease;
+        }
+
+        #status.running {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        #status.complete {
+            border-color: #10b981;
+            background: #ecfdf5;
+        }
+
+        #status.error {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .status-item {
+            margin-bottom: 15px;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .status-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .report-id {
+            font-family: 'Courier New', monospace;
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            display: inline-block;
+            margin: 5px 0;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success-icon {
+            color: #10b981;
+            font-size: 1.2em;
+            margin-right: 8px;
+        }
+
+        .error-icon {
+            color: #ef4444;
+            font-size: 1.2em;
+            margin-right: 8px;
+        }
+
+        .info-box {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-box p {
+            color: #92400e;
+            margin: 0;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏪 Store Monitoring</h1>
+            <p>Generate comprehensive uptime and downtime reports for your stores</p>
+        </div>
+        
+        <div class="content">
+            <div class="info-box">
+                <p><strong>📊 Report Details:</strong> This report analyzes store uptime/downtime for the last hour, day, and week based on business hours and polling data.</p>
+            </div>
+            
+            <div class="trigger-section">
+                <button id="triggerBtn">
+                    <span id="btnText">🚀 Generate New Report</span>
+                </button>
+            </div>
+            
+            <div id="status">
+                <div class="status-item">
+                    <span style="color: #6b7280;">💡 Click the button above to generate a new store monitoring report</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const triggerBtn = document.getElementById('triggerBtn');
+        const btnText = document.getElementById('btnText');
+        const statusDiv = document.getElementById('status');
+        let pollingInterval;
+
+        triggerBtn.addEventListener('click', async () => {
+            triggerBtn.disabled = true;
+            btnText.innerHTML = '<div class="spinner"></div>Generating...';
+            statusDiv.className = 'running';
+            statusDiv.innerHTML = '<div class="status-item"><div class="spinner"></div>Initializing report generation...</div>';
+            
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+
+            try {
+                const response = await fetch('/trigger_report', { method: 'POST' });
+                const data = await response.json();
+                const reportId = data.report_id;
+                
+                statusDiv.innerHTML = `
+                    <div class="status-item">
+                        <strong>📋 Report ID:</strong>
+                        <div class="report-id">${reportId}</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="spinner"></div><strong>Status:</strong> Processing data and calculating metrics...
+                    </div>
+                `;
+                
+                // Start polling for the report status
+                pollingInterval = setInterval(() => {
+                    pollReportStatus(reportId);
+                }, 3000); // Poll every 3 seconds
+
+            } catch (error) {
+                statusDiv.className = 'error';
+                statusDiv.innerHTML = `
+                    <div class="status-item">
+                        <span class="error-icon">❌</span><strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+                triggerBtn.disabled = false;
+                btnText.innerHTML = '🚀 Generate New Report';
+            }
+        });
+
+        async function pollReportStatus(reportId) {
+            try {
+                const response = await fetch(`/get_report/${reportId}`);
+                
+                // If response is CSV, it's complete
+                if (response.headers.get("content-type").includes("text/csv")) {
+                    clearInterval(pollingInterval);
+                    const blob = await response.blob();
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    
+                    statusDiv.className = 'complete';
+                    statusDiv.innerHTML = `
+                        <div class="status-item">
+                            <strong>📋 Report ID:</strong>
+                            <div class="report-id">${reportId}</div>
+                        </div>
+                        <div class="status-item">
+                            <span class="success-icon">✅</span><strong>Status:</strong> Report generated successfully!
+                        </div>
+                        <div class="status-item">
+                            <a href="${downloadUrl}" download="store_report_${reportId}.csv" class="download-btn">
+                                📥 Download Report CSV
+                            </a>
+                        </div>
+                    `;
+                    
+                    triggerBtn.disabled = false;
+                    btnText.innerHTML = '🚀 Generate New Report';
+                    return;
+                }
+
+                const data = await response.json();
+                if (data.status === 'Running') {
+                    console.log('Report is still running...');
+                    // Update status message with more details
+                    const currentTime = new Date().toLocaleTimeString();
+                    statusDiv.innerHTML = `
+                        <div class="status-item">
+                            <strong>📋 Report ID:</strong>
+                            <div class="report-id">${reportId}</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="spinner"></div><strong>Status:</strong> Processing store data... (Last checked: ${currentTime})
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                clearInterval(pollingInterval);
+                statusDiv.className = 'error';
+                statusDiv.innerHTML += `
+                    <div class="status-item">
+                        <span class="error-icon">❌</span><strong>Error polling status:</strong> ${error.message}
+                    </div>
+                `;
+                triggerBtn.disabled = false;
+                btnText.innerHTML = '🚀 Generate New Report';
+            }
+        }
+    </script>
+</body>
+</html>
