@@ -1,29 +1,14 @@
 import io
 from typing import Literal
 from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException
-from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from uuid import uuid4
 from report_logic import generate_report, get_report_status
 from database import get_db
 import uvicorn
-import csv
-from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Serve the HTML file at root
-@app.get("/")
-async def read_index():
-    return FileResponse('index.html')
 
 @app.post('/trigger-report')
 async def trigger_report(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
@@ -51,12 +36,7 @@ def get_report(
             )
         # If the user wants to view the data as JSON
         elif format == 'json':
-            # Use the csv module to parse the CSV string into a list of dictionaries
-            csv_reader = csv.DictReader(io.StringIO(data))
-            json_data = list(csv_reader)
-            return JSONResponse(content=json_data)
-    
-    return {"status": status}
+            return {"status": status, "data": data}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
