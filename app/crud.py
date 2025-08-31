@@ -50,7 +50,7 @@ class StoreTimezoneCRUD(CRUDBase):
 
     def get_store_timezone(self, db: Session, store_id: int) -> str | None:
         result = db.query(self.model).filter(self.model.store_id == store_id).first()
-        return result.time_zone if result else None
+        return result.timezone_str if result else None
 
 class StoreBusinessHoursCRUD(CRUDBase):
 
