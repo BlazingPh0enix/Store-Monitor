@@ -1,3 +1,4 @@
+import io
 from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -5,7 +6,6 @@ from uuid import uuid4
 from report_logic import generate_report, get_report_status
 from database import get_db
 import uvicorn
-import io
 
 app = FastAPI()
 
@@ -18,12 +18,12 @@ async def trigger_report(background_tasks: BackgroundTasks, db: Session = Depend
 @app.get('/get-report/{report_id}')
 def get_report(report_id: str):
     status, data = get_report_status(report_id)
-    if status == "Not Found":
+    if str(status) == "Not Found":
         raise HTTPException(status_code=404, detail="Report ID not found")
-    
-    if status == "Complete":
+
+    if str(status) == "Complete":
         return StreamingResponse(
-            iter([data]),
+            io.StringIO(data),
             media_type="text/csv",
             headers={"Content-Disposition": f"attachment; filename=report_{report_id}.csv"}
         )
