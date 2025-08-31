@@ -188,6 +188,70 @@
             margin: 0;
             font-size: 0.95rem;
         }
+
+        /* Table styles */
+        #report-table-container {
+            margin-top: 30px;
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px 8px 0 0;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .table-wrapper {
+            background: white;
+            border-radius: 0 0 8px 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 2px solid #e5e7eb;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #d1d5db;
+        }
+
+        td {
+            color: #4b5563;
+        }
+
+        tr:hover {
+            background-color: #f9fafb;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Responsive table */
+        @media (max-width: 768px) {
+            .table-wrapper {
+                overflow-x: auto;
+            }
+            
+            table {
+                min-width: 600px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -213,6 +277,8 @@
                     <span style="color: #6b7280;">💡 Click the button above to generate a new store monitoring report</span>
                 </div>
             </div>
+            
+            <div id="report-table-container"></div>
         </div>
     </div>
 
@@ -220,6 +286,7 @@
         const triggerBtn = document.getElementById('triggerBtn');
         const btnText = document.getElementById('btnText');
         const statusDiv = document.getElementById('status');
+        const tableContainer = document.getElementById('report-table-container');
         let pollingInterval;
 
         triggerBtn.addEventListener('click', async () => {
@@ -227,13 +294,19 @@
             btnText.innerHTML = '<div class="spinner"></div>Generating...';
             statusDiv.className = 'running';
             statusDiv.innerHTML = '<div class="status-item"><div class="spinner"></div>Initializing report generation...</div>';
+            tableContainer.innerHTML = ''; // Clear previous table
             
             if (pollingInterval) {
                 clearInterval(pollingInterval);
             }
 
             try {
-                const response = await fetch('/trigger_report', { method: 'POST' });
+                const response = await fetch('http://127.0.0.1:8000/trigger-report', { method: 'POST' });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
                 const reportId = data.report_id;
                 
@@ -266,12 +339,17 @@
 
         async function pollReportStatus(reportId) {
             try {
-                const response = await fetch(`/get_report/${reportId}`);
+                const response = await fetch(`http://127.0.0.1:8000/get-report/${reportId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
                 
                 // If response is CSV, it's complete
                 if (response.headers.get("content-type").includes("text/csv")) {
                     clearInterval(pollingInterval);
-                    const blob = await response.blob();
+                    const csvText = await response.text(); // Get CSV content as text
+                    const blob = new Blob([csvText], { type: 'text/csv' });
                     const downloadUrl = window.URL.createObjectURL(blob);
                     
                     statusDiv.className = 'complete';
@@ -290,25 +368,35 @@
                         </div>
                     `;
                     
+                    // Display the CSV data as a table
+                    renderCsvAsTable(csvText);
+                    
                     triggerBtn.disabled = false;
                     btnText.innerHTML = '🚀 Generate New Report';
                     return;
                 }
 
-                const data = await response.json();
-                if (data.status === 'Running') {
-                    console.log('Report is still running...');
-                    // Update status message with more details
-                    const currentTime = new Date().toLocaleTimeString();
-                    statusDiv.innerHTML = `
-                        <div class="status-item">
-                            <strong>📋 Report ID:</strong>
-                            <div class="report-id">${reportId}</div>
-                        </div>
-                        <div class="status-item">
-                            <div class="spinner"></div><strong>Status:</strong> Processing store data... (Last checked: ${currentTime})
-                        </div>
-                    `;
+                // Try to parse as JSON only if it's not CSV
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    const data = await response.json();
+                    if (data.status === 'Running') {
+                        console.log('Report is still running...');
+                        // Update status message with more details
+                        const currentTime = new Date().toLocaleTimeString();
+                        statusDiv.innerHTML = `
+                            <div class="status-item">
+                                <strong>📋 Report ID:</strong>
+                                <div class="report-id">${reportId}</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="spinner"></div><strong>Status:</strong> Processing store data... (Last checked: ${currentTime})
+                            </div>
+                        `;
+                    }
+                } else {
+                    // If it's neither CSV nor JSON, treat as an error
+                    throw new Error('Unexpected response format');
                 }
 
             } catch (error) {
@@ -322,6 +410,42 @@
                 triggerBtn.disabled = false;
                 btnText.innerHTML = '🚀 Generate New Report';
             }
+        }
+
+        // Function to render CSV as a styled table
+        function renderCsvAsTable(csvText) {
+            const lines = csvText.trim().split('\n');
+            if (lines.length === 0) return;
+            
+            const headers = lines[0].split(',');
+            
+            let tableHtml = `
+                <div class="table-header">
+                    📊 Store Monitoring Report Results
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+            `;
+            
+            headers.forEach(header => {
+                tableHtml += `<th>${header.trim()}</th>`;
+            });
+            
+            tableHtml += '</tr></thead><tbody>';
+
+            for (let i = 1; i < lines.length; i++) {
+                const cells = lines[i].split(',');
+                tableHtml += '<tr>';
+                cells.forEach(cell => {
+                    tableHtml += `<td>${cell.trim()}</td>`;
+                });
+                tableHtml += '</tr>';
+            }
+
+            tableHtml += '</tbody></table></div>';
+            tableContainer.innerHTML = tableHtml;
         }
     </script>
 </body>
