@@ -145,12 +145,12 @@ def generate_report(report_id: UUID):
 
     return final_report_data
 
-def get_report_status(report_id: str):
+def get_report_status(report_id: str) -> tuple[str, str | None]:
     db = SessionLocal()
     try:
         report = store_report_crud.get_report_by_id(db, report_id)
         if not report:
             return "Not Found", None
-        return report.status, report.report_data
+        return str(report.status), str(report.report_data)
     finally:
         db.close()

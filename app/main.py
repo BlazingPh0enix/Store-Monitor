@@ -18,10 +18,10 @@ async def trigger_report(background_tasks: BackgroundTasks, db: Session = Depend
 @app.get('/get-report/{report_id}')
 def get_report(report_id: str):
     status, data = get_report_status(report_id)
-    if str(status) == "Not Found":
+    if status == "Not Found":
         raise HTTPException(status_code=404, detail="Report ID not found")
 
-    if str(status) == "Complete":
+    if status == "Complete":
         return StreamingResponse(
             io.StringIO(data),
             media_type="text/csv",
