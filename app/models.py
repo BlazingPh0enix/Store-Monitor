@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Integer, String
+from sqlalchemy import Column, DateTime, Integer, String, JSON
 from sqlalchemy.orm import DeclarativeBase
 
 class Base(DeclarativeBase):
@@ -29,6 +29,6 @@ class StoreReport(Base):
     __tablename__ = "store_report"
 
     report_id = Column(String, primary_key=True)
-    store_id = Column(String, nullable=False)
     status = Column(String, nullable=False)
+    report_data = Column(JSON, nullable=True)
     created_at = Column(DateTime, nullable=False)
