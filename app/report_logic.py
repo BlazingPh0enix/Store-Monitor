@@ -28,6 +28,7 @@ from database import SessionLocal
 from datetime import datetime, timedelta, time
 import pytz
 import concurrent.futures
+import time as timer
 
 # --- WORKER FUNCTION ---
 # This function contains the logic to process exactly ONE store.
@@ -58,7 +59,6 @@ def process_single_store(args: tuple):
     
     # Each parallel process must create its own database session.
     db = SessionLocal()
-    print(f"-> Starting processing for store_id: {store_id}")
     try:
         store_timezone_str = store_timezone_crud.get_store_timezone(db, store_id) or "America/Chicago"
         store_tz = pytz.timezone(store_timezone_str)
@@ -127,7 +127,6 @@ def process_single_store(args: tuple):
         uptime_last_hour = uptime_last_day if max_timestamp_utc - start_of_week <= timedelta(hours=1) else (uptime_last_day / 24)
         downtime_last_hour = downtime_last_day if max_timestamp_utc - start_of_week <= timedelta(hours=1) else (downtime_last_day / 24)
 
-        print(f"<- Finished processing for store_id: {store_id}")
         return {
             "store_id": store_id,
             "uptime_last_hour": round(uptime_last_hour.total_seconds() / 60, 2),
@@ -161,6 +160,9 @@ def generate_report_parallel(report_id: UUID):
         progress and final results. It uses ProcessPoolExecutor for
         parallel processing of individual stores.
     """
+
+    start_time = timer.time() # Start timer for performance measurement
+
     db = SessionLocal()
     print(f"\n🚀 Parallel report generation task started for report_id: {report_id}")
     try:
@@ -182,12 +184,17 @@ def generate_report_parallel(report_id: UUID):
 
         tasks = [(store_id, max_timestamp_utc) for store_id in all_store_ids]
 
+        results = []
         with concurrent.futures.ProcessPoolExecutor() as executor:
-            results = list(executor.map(process_single_store, tasks))
+            for i, result in enumerate(executor.map(process_single_store, tasks), start=1):
+                print(f"({i}/{len(tasks)}) Processing store id: {tasks[i-1][0]}")
+                results.append(result)
 
         final_report_data = [res for res in results if res is not None]
 
         print("\n✅ All stores processed. Compiling and saving the final report...")
+        total_time = timer.time() - start_time
+        print(f"🕒 Report generation completed in {total_time:.2f} seconds.")
         df = pd.DataFrame(final_report_data)
         csv_buffer = io.StringIO()
         df.to_csv(csv_buffer, index=False)
