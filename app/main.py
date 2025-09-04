@@ -11,7 +11,7 @@ from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from uuid import uuid4
-from report_logic import generate_report, get_report_status
+from report_logic import generate_report_parallel, get_report_status
 from database import get_db
 import uvicorn
 
@@ -41,7 +41,7 @@ async def trigger_report(background_tasks: BackgroundTasks, db: Session = Depend
     report_id = uuid4()
     
     # Add the report generation task to background queue
-    background_tasks.add_task(generate_report, report_id)
+    background_tasks.add_task(generate_report_parallel, report_id)
     
     return {"report_id": str(report_id)}
 
